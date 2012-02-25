@@ -1,9 +1,3 @@
-[submodule "projects/LaserTag"]
-	path = projects/LaserTag
-	url = git@github.com:igutekunst/Laser-Tag.git
-[submodule "projects/ac-dmx-dimmer"]
-	path = projects/ac-dmx-dimmer
-	url = git@github.com:igutekunst/AC-DMX-Dimmer.git
 [submodule "Eagle-Data"]
 	path = Eagle-Data
 	url = git@github.com:igutekunst/Eagle-Data.git

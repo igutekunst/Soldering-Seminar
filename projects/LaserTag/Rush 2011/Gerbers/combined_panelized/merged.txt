@@ -1,0 +1,9 @@
+LaserTag*rotated90 0.200 0.200
+LaserTag*rotated90 1.415 0.200
+LaserTag*rotated90 2.629 0.200
+LaserTag*rotated90 3.844 0.200
+LaserTag*rotated90 5.058 0.200
+LaserTag*rotated90 0.200 4.290
+LaserTag*rotated90 1.415 4.290
+ACNode*rotated90 2.629 4.290
+Controller*rotated90 5.894 4.290
