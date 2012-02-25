@@ -1,0 +1,3 @@
+[submodule "projects/LaserTag"]
+	path = projects/LaserTag
+	url = git@github.com:igutekunst/Laser-Tag.git
