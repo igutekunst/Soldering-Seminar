@@ -1,0 +1,3 @@
+gameSM.c: In function '_T1Interrupt':
+gameSM.c:65: warning:  PSV model not specified for '_T1Interrupt';
+   assuming 'auto_psv' this may affect latency

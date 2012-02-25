@@ -1,0 +1,9 @@
+In file included from io.h:5,
+                 from io.c:1:
+irSerial.h:23:2: warning: no newline at end of file
+In file included from io.c:1:
+io.h:12:7: warning: no newline at end of file
+io.c: In function '_T2Interrupt':
+io.c:138: warning:  PSV model not specified for '_T2Interrupt';
+   assuming 'auto_psv' this may affect latency
+io.c:172:2: warning: no newline at end of file

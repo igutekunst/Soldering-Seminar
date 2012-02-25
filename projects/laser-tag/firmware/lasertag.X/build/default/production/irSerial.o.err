@@ -1,0 +1,6 @@
+In file included from irSerial.c:2:
+irSerial.h:23:2: warning: no newline at end of file
+irSerial.c: In function '_T3Interrupt':
+irSerial.c:54: warning:  PSV model not specified for '_T3Interrupt';
+   assuming 'auto_psv' this may affect latency
+irSerial.c:106:7: warning: no newline at end of file

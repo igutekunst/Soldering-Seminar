@@ -1,0 +1,8 @@
+In file included from io.h:5,
+                 from main.c:4:
+irSerial.h:23:2: warning: no newline at end of file
+In file included from main.c:4:
+io.h:12:7: warning: no newline at end of file
+main.c: In function '_U1RXInterrupt':
+main.c:73: warning:  PSV model not specified for '_U1RXInterrupt';
+   assuming 'auto_psv' this may affect latency
