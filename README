@@ -5,7 +5,7 @@ Directory structure is as follows:
 Projects:
 	Contains each individual project
 
-projects/projectName
+projects/projectName      : Projects are all submodules to make things simpler 
 	/eagle		: pcb files
 	/firmware	: all code necessary to run hardware (excludes computer side code)
 	/eagleUp	: files necessary to make a 3D model of the board
