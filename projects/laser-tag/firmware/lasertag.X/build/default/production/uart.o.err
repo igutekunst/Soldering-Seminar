@@ -1,2 +1,0 @@
-uart.c:32: warning: conflicting types for 'UART1GuteInit'
-uart.h:4: warning: previous declaration of 'UART1GuteInit' was here
