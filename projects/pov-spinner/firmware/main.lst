@@ -1,0 +1,1146 @@
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 #include p16f722.inc
+                      00001         LIST
+                      00002 ; P16F722.INC  Standard Header File, Version 2.01    Microchip Technology, Inc.
+                      00541         LIST
+                      00542 
+                      00002 
+2007   3CF4           00003         __CONFIG _CONFIG1, _DEBUG_OFF & _PLL_EN & _BOR_OFF & _CP_OFF & _MCLR_EN & _PWRT_DIS & _WDT_OFF &
+                             _INTOSCIO
+2008   3FEF           00004         __CONFIG _CONFIG2, _VCAP_RA6
+                      00005 
+                      00006 #define BUTTON PORTB, 0
+                      00007 
+0000                  00008         org 0x00
+                      00009 
+                      00010 ; wait constant, closer to 0xff is faster
+  000000C0            00011 waitcst equ 0xff - (0xff / 4)
+                      00012 
+                      00013 ; general purpose memory starts at 0x20
+  00000070            00014 imgstlow   equ 0x70
+  00000071            00015 imgsthigh  equ 0x71
+  00000072            00016 imgendlow  equ 0x72
+  00000073            00017 imgendhigh equ 0x73
+  00000074            00018 imgid      equ 0x74
+  00000075            00019 btndown equ 0x75
+  00000076            00020 vwait1  equ 0x76
+  00000077            00021 vwait2  equ 0x77
+                      00022 
+0000   2805           00023         goto start
+0001   2805           00024         goto start
+0002   2805           00025         goto start
+0003   2805           00026         goto start
+0004   2805           00027         goto start
+                      00028 
+0005                  00029 start:
+                      00030         ; disable analogs
+0005   1683 1703      00031         banksel ANSELA
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0007   0185           00032         clrf ANSELA
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0008   0186           00033         clrf ANSELB
+                      00034 
+                      00035         ; enable digital outputs, except for the button
+0009   1683 1303      00036         banksel TRISA
+000B   3001           00037         movlw 0x01
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+000C   0185           00038         clrf TRISA
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+000D   0086           00039         movwf TRISB
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+000E   0187           00040         clrf TRISC
+                      00041 
+                      00042         ; default to all off
+000F   1283 1303      00043         banksel PORTA
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0011   0185           00044         clrf PORTA
+0012   0186           00045         clrf PORTB
+0013   0187           00046         clrf PORTC
+                      00047 
+                      00048         ; start at the first column of the first image
+0014   01F4           00049         clrf imgid
+                      00050 
+0015   1283 1703      00051         banksel PMADRL
+0017   308D           00052         movlw img0start & 0xff
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0018   008D           00053         movwf PMADRL
+0019   00F0           00054         movwf imgstlow
+001A   3000           00055         movlw img0start >> 8
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001B   008F           00056         movwf PMADRH
+001C   00F1           00057         movwf imgsthigh
+                      00058 
+001D   30B5           00059         movlw img0end & 0xff
+001E   00F2           00060         movwf imgendlow
+001F   3000           00061         movlw img0end >> 8
+0020   00F3           00062         movwf imgendhigh
+                      00063 
+0021   01F5           00064         clrf btndown
+                      00065 
+0022                  00066 loop:
+                      00067 
+                      00068         ; sleep appropriately
+0022   30C0           00069         movlw waitcst
+0023   00F6           00070         movwf vwait1
+0024                  00071 wait1:
+0024   01F7           00072         clrf vwait2
+0025                  00073 wait2:
+0025   0FF7           00074         incfsz vwait2, F
+0026   2825           00075         goto wait2
+0027   0FF6           00076         incfsz vwait1, F
+0028   2824           00077         goto wait1
+                      00078 
+                      00079         ; change PORTS A, B, and C
+0029   1683 1703      00080         banksel PMCON1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+002B   140C           00081         bsf PMCON1, RD
+002C   0000           00082         nop
+002D   0000           00083         nop
+002E   1283 1703      00084         banksel PMDATL
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0030   080C           00085         movf PMDATL, W
+0031   1283 1303      00086         banksel PORTC
+0033   0087           00087         movwf PORTC
+0034   1283 1703      00088         banksel PMDATL
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0036   080E           00089         movf PMDATH, W
+0037   1283 1303      00090         banksel PORTA
+0039   0085           00091         movwf PORTA
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00092 
+003A   1283 1703      00093         banksel PMDATL
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+003C   0F8D           00094         incfsz PMADRL, F
+003D   283F           00095         goto noinchigh1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+003E   0A8F           00096         incf PMADRH, F
+003F                  00097 noinchigh1:
+003F   1683 1703      00098         banksel PMCON1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0041   140C           00099         bsf PMCON1, RD
+0042   0000           00100         nop
+0043   0000           00101         nop
+0044   1283 1703      00102         banksel PMDATL
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0046   080C           00103         movf PMDATL, W
+0047   1283 1303      00104         banksel PORTB
+0049   0086           00105         movwf PORTB
+                      00106 
+                      00107         ; increment
+004A   1283 1703      00108         banksel PMDATL
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+004C   0F8D           00109         incfsz PMADRL, F
+004D   284F           00110         goto noinchigh2
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+004E   0A8F           00111         incf PMADRH, F
+004F                  00112 noinchigh2:
+                      00113         
+                      00114         ; see if we're at the end of the image
+004F   0873           00115         movf imgendhigh, W
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0050   020E           00116         subwf PMDATH, W
+0051   1D03           00117         btfss STATUS, Z
+0052   285B           00118         goto aftereoi
+                      00119 
+0053   0872           00120         movf imgendlow, W
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0054   020C           00121         subwf PMDATL, W
+0055   1D03           00122         btfss STATUS, Z
+0056   285B           00123         goto aftereoi
+                      00124 
+                      00125         ; we are, so we need to reload
+0057   0870           00126         movf imgstlow, W
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0058   008C           00127         movwf PMDATL
+0059   0871           00128         movf imgsthigh, W
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+005A   008E           00129         movwf PMDATH
+                      00130 
+005B                  00131 aftereoi:
+                      00132         ; see if we need to change images       
+                      00133 
+005B   1283 1303      00134         banksel PORTA
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+005D   1C06           00135         btfss BUTTON
+005E   288B           00136         goto nobutton
+                      00137 
+005F   1875           00138         btfsc btndown, 0
+0060   2822           00139         goto loop
+                      00140 
+0061   1475           00141         bsf btndown, 0
+                      00142 
+                      00143         ; time to change images!
+0062   0AF4           00144         incf imgid, F
+0063   300C           00145         movlw imgcnt
+0064   0274           00146         subwf imgid, W
+0065   1903           00147         btfsc STATUS, Z
+0066   01F4           00148         clrf imgid
+                      00149 
+                      00150         ; load image size
+0067   1283 1703      00151         banksel PMADRH
+0069   3023           00152         movlw images & 0xff
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+006A   008D           00153         movwf PMADRL
+006B   3003           00154         movlw images >> 8
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+006C   008F           00155         movwf PMADRH
+                      00156         
+006D   0874           00157         movf imgid, W
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+006E   078D           00158         addwf PMADRL, F
+006F   1803           00159         btfsc STATUS, C
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0070   0A8F           00160         incf PMADRH, F
+                      00161 
+0071   1683 1703      00162         banksel PMCON1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0073   140C           00163         bsf PMCON1, RD
+0074   0000           00164         nop
+0075   0000           00165         nop
+0076   1283 1703      00166         banksel PMDATL
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0078   080C           00167         movf PMDATL, W
+0079   00F0           00168         movwf imgstlow
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+007A   080E           00169         movf PMDATH, W
+007B   00F1           00170         movwf imgsthigh
+                      00171 
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+007C   0F8D           00172         incfsz PMADRL, F
+007D   287F           00173         goto noinchigh3
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+007E   0A8F           00174         incf PMADRH, F
+007F                  00175 noinchigh3:
+007F   1683 1703      00176         banksel PMCON1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0081   140C           00177         bsf PMCON1, RD
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0082   0000           00178         nop
+0083   0000           00179         nop
+0084   1283 1703      00180         banksel PMDATL
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0086   080C           00181         movf PMDATL, W
+0087   00F2           00182         movwf imgendlow
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0088   080E           00183         movf PMDATH, W
+0089   00F3           00184         movwf imgendhigh
+                      00185 
+008A   2822           00186         goto loop
+                      00187 
+008B                  00188 nobutton:
+008B   01F5           00189         clrf btndown
+008C   2822           00190         goto loop
+                      00191 
+                      00192 #include "images.inc"
+008D                  00001 img0start:
+008D   0002 0000      00002     DATA 0x2, 0x0
+008F   2000 0000      00003     DATA 0x2000, 0x0
+0091   0004 0002      00004     DATA 0x4, 0x2
+0093   0944 0042      00005     DATA 0x944, 0x42
+0095   05C4 0002      00006     DATA 0x5c4, 0x2
+0097   0904 0002      00007     DATA 0x904, 0x2
+0099   05C4 0042      00008     DATA 0x5c4, 0x42
+009B   0944 0042      00009     DATA 0x944, 0x42
+009D   0004 0002      00010     DATA 0x4, 0x2
+009F   0400 0000      00011     DATA 0x400, 0x0
+00A1   0400 0010      00012     DATA 0x400, 0x10
+00A3   0400 0000      00013     DATA 0x400, 0x0
+00A5   0000 0000      00014     DATA 0x0, 0x0
+00A7   0000 0000      00015     DATA 0x0, 0x0
+00A9   0000 0000      00016     DATA 0x0, 0x0
+00AB   0000 0000      00017     DATA 0x0, 0x0
+00AD   0000 0000      00018     DATA 0x0, 0x0
+00AF   0000 0000      00019     DATA 0x0, 0x0
+00B1   0000 0000      00020     DATA 0x0, 0x0
+00B3   0000 0000      00021     DATA 0x0, 0x0
+00B5                  00022 img0end:
+00B5                  00023 img1start:
+00B5   1299 0020      00024     DATA 0x1299, 0x20
+00B7   1299 0020      00025     DATA 0x1299, 0x20
+00B9   0000 0000      00026     DATA 0x0, 0x0
+00BB   1209 0020      00027     DATA 0x1209, 0x20
+00BD   1209 0020      00028     DATA 0x1209, 0x20
+00BF   0000 0000      00029     DATA 0x0, 0x0
+00C1   1299 0020      00030     DATA 0x1299, 0x20
+00C3   1299 0020      00031     DATA 0x1299, 0x20
+00C5   0000 0000      00032     DATA 0x0, 0x0
+00C7   22FF 0022      00033     DATA 0x22ff, 0x22
+00C9   22FF 0022      00034     DATA 0x22ff, 0x22
+00CB   0000 0000      00035     DATA 0x0, 0x0
+00CD   0299 0020      00036     DATA 0x299, 0x20
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00CF   0299 0020      00037     DATA 0x299, 0x20
+00D1   0200 0020      00038     DATA 0x200, 0x20
+00D3   0200 0020      00039     DATA 0x200, 0x20
+00D5   0000 0000      00040     DATA 0x0, 0x0
+00D7   0000 0000      00041     DATA 0x0, 0x0
+00D9   0000 0000      00042     DATA 0x0, 0x0
+00DB   0000 0000      00043     DATA 0x0, 0x0
+00DD   0000 0000      00044     DATA 0x0, 0x0
+00DF                  00045 img1end:
+00DF                  00046 img2start:
+00DF   0000 0000      00047     DATA 0x0, 0x0
+00E1   0000 0000      00048     DATA 0x0, 0x0
+00E3   1C70 0000      00049     DATA 0x1c70, 0x0
+00E5   3CFF 0002      00050     DATA 0x3cff, 0x2
+00E7   1F70 0010      00051     DATA 0x1f70, 0x10
+00E9   3FFF 00F2      00052     DATA 0x3fff, 0xf2
+00EB   1F70 00F0      00053     DATA 0x1f70, 0xf0
+00ED   3FFF 00F2      00054     DATA 0x3fff, 0xf2
+00EF   1F70 0010      00055     DATA 0x1f70, 0x10
+00F1   3CFF 0002      00056     DATA 0x3cff, 0x2
+00F3   1C70 0000      00057     DATA 0x1c70, 0x0
+00F5   0000 0000      00058     DATA 0x0, 0x0
+00F7   0000 0000      00059     DATA 0x0, 0x0
+00F9   0000 0000      00060     DATA 0x0, 0x0
+00FB   0000 0000      00061     DATA 0x0, 0x0
+00FD   0000 0000      00062     DATA 0x0, 0x0
+00FF   0000 0000      00063     DATA 0x0, 0x0
+0101   0000 0000      00064     DATA 0x0, 0x0
+0103   0000 0000      00065     DATA 0x0, 0x0
+0105   0000 0000      00066     DATA 0x0, 0x0
+0107                  00067 img2end:
+0107                  00068 img3start:
+0107   0800 00C0      00069     DATA 0x800, 0xc0
+0109   0100 0000      00070     DATA 0x100, 0x0
+010B   2C00 0042      00071     DATA 0x2c00, 0x42
+010D   2006 0042      00072     DATA 0x2006, 0x42
+010F   1080 0042      00073     DATA 0x1080, 0x42
+0111   016C 0000      00074     DATA 0x16c, 0x0
+0113   0860 0002      00075     DATA 0x860, 0x2
+0115   0064 0002      00076     DATA 0x64, 0x2
+0117   0080 0002      00077     DATA 0x80, 0x2
+0119   2026 0002      00078     DATA 0x2026, 0x2
+011B   2C20 0002      00079     DATA 0x2c20, 0x2
+011D   012A 0010      00080     DATA 0x12a, 0x10
+011F   0400 00C2      00081     DATA 0x400, 0xc2
+0121   0004 00C2      00082     DATA 0x4, 0xc2
+0123   0800 00C0      00083     DATA 0x800, 0xc0
+0125   0100 0000      00084     DATA 0x100, 0x0
+0127   2C00 0042      00085     DATA 0x2c00, 0x42
+0129   2006 0042      00086     DATA 0x2006, 0x42
+012B   1880 0042      00087     DATA 0x1880, 0x42
+012D   0162 0000      00088     DATA 0x162, 0x0
+012F   0860 0002      00089     DATA 0x860, 0x2
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0131   0064 0002      00090     DATA 0x64, 0x2
+0133   0080 0002      00091     DATA 0x80, 0x2
+0135   2026 0002      00092     DATA 0x2026, 0x2
+0137   2C20 0002      00093     DATA 0x2c20, 0x2
+0139   0128 0010      00094     DATA 0x128, 0x10
+013B   1400 00C2      00095     DATA 0x1400, 0xc2
+013D   0004 00C2      00096     DATA 0x4, 0xc2
+013F                  00097 img3end:
+013F                  00098 img4start:
+013F   0000 0000      00099     DATA 0x0, 0x0
+0141   1289 0000      00100     DATA 0x1289, 0x0
+0143   0281 0000      00101     DATA 0x281, 0x0
+0145   0280 0000      00102     DATA 0x280, 0x0
+0147   0000 0000      00103     DATA 0x0, 0x0
+0149   0000 0000      00104     DATA 0x0, 0x0
+014B   0031 0002      00105     DATA 0x31, 0x2
+014D   1881 0002      00106     DATA 0x1881, 0x2
+014F   030D 0002      00107     DATA 0x30d, 0x2
+0151   0001 0062      00108     DATA 0x1, 0x62
+0153   0000 0000      00109     DATA 0x0, 0x0
+0155   0000 0000      00110     DATA 0x0, 0x0
+0157   1289 0000      00111     DATA 0x1289, 0x0
+0159   0280 0000      00112     DATA 0x280, 0x0
+015B   0280 0000      00113     DATA 0x280, 0x0
+015D   0000 0000      00114     DATA 0x0, 0x0
+015F   0000 0000      00115     DATA 0x0, 0x0
+0161   0000 0000      00116     DATA 0x0, 0x0
+0163   0000 0000      00117     DATA 0x0, 0x0
+0165   0000 0000      00118     DATA 0x0, 0x0
+0167                  00119 img4end:
+0167                  00120 img5start:
+0167   0000 0000      00121     DATA 0x0, 0x0
+0169   0030 0000      00122     DATA 0x30, 0x0
+016B   00B0 0002      00123     DATA 0xb0, 0x2
+016D   00BC 0002      00124     DATA 0xbc, 0x2
+016F   00BC 0002      00125     DATA 0xbc, 0x2
+0171   00B1 0002      00126     DATA 0xb1, 0x2
+0173   1831 0002      00127     DATA 0x1831, 0x2
+0175   1B01 0002      00128     DATA 0x1b01, 0x2
+0177   1B01 0002      00129     DATA 0x1b01, 0x2
+0179   1831 0002      00130     DATA 0x1831, 0x2
+017B   00B1 0002      00131     DATA 0xb1, 0x2
+017D   00BC 0002      00132     DATA 0xbc, 0x2
+017F   00BC 0002      00133     DATA 0xbc, 0x2
+0181   00B0 0002      00134     DATA 0xb0, 0x2
+0183   0030 0000      00135     DATA 0x30, 0x0
+0185   0000 0000      00136     DATA 0x0, 0x0
+0187   0000 0000      00137     DATA 0x0, 0x0
+0189   0000 0000      00138     DATA 0x0, 0x0
+018B   0000 0000      00139     DATA 0x0, 0x0
+018D   0000 0000      00140     DATA 0x0, 0x0
+018F                  00141 img5end:
+018F                  00142 img6start:
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+018F   0082 0080      00143     DATA 0x82, 0x80
+0191   2000 0010      00144     DATA 0x2000, 0x10
+0193   24C0 0080      00145     DATA 0x24c0, 0x80
+0195   2002 0000      00146     DATA 0x2002, 0x0
+0197   25C2 0010      00147     DATA 0x25c2, 0x10
+0199   2002 0000      00148     DATA 0x2002, 0x0
+019B   25C2 0010      00149     DATA 0x25c2, 0x10
+019D   2002 0000      00150     DATA 0x2002, 0x0
+019F   24C0 0080      00151     DATA 0x24c0, 0x80
+01A1   2000 0010      00152     DATA 0x2000, 0x10
+01A3   0082 0080      00153     DATA 0x82, 0x80
+01A5   0000 0000      00154     DATA 0x0, 0x0
+01A7   0000 0000      00155     DATA 0x0, 0x0
+01A9   0000 0000      00156     DATA 0x0, 0x0
+01AB   0000 0000      00157     DATA 0x0, 0x0
+01AD   0000 0000      00158     DATA 0x0, 0x0
+01AF   0000 0000      00159     DATA 0x0, 0x0
+01B1   0000 0000      00160     DATA 0x0, 0x0
+01B3   0000 0000      00161     DATA 0x0, 0x0
+01B5   0000 0000      00162     DATA 0x0, 0x0
+01B7   0000 0000      00163     DATA 0x0, 0x0
+01B9   0000 0000      00164     DATA 0x0, 0x0
+01BB   0000 0000      00165     DATA 0x0, 0x0
+01BD   0000 0000      00166     DATA 0x0, 0x0
+01BF   0000 0000      00167     DATA 0x0, 0x0
+01C1   0000 0000      00168     DATA 0x0, 0x0
+01C3   0000 0000      00169     DATA 0x0, 0x0
+01C5   0000 0000      00170     DATA 0x0, 0x0
+01C7                  00171 img6end:
+01C7                  00172 img7start:
+01C7   0000 0000      00173     DATA 0x0, 0x0
+01C9   0080 0002      00174     DATA 0x80, 0x2
+01CB   2071 0002      00175     DATA 0x2071, 0x2
+01CD   1C7E 0000      00176     DATA 0x1c7e, 0x0
+01CF   1C7E 0000      00177     DATA 0x1c7e, 0x0
+01D1   1C7E 0000      00178     DATA 0x1c7e, 0x0
+01D3   037E 0010      00179     DATA 0x37e, 0x10
+01D5   0380 0002      00180     DATA 0x380, 0x2
+01D7   0300 0000      00181     DATA 0x300, 0x0
+01D9   0500 0010      00182     DATA 0x500, 0x10
+01DB   0500 0010      00183     DATA 0x500, 0x10
+01DD   0500 0010      00184     DATA 0x500, 0x10
+01DF   2C00 0010      00185     DATA 0x2c00, 0x10
+01E1   2D02 0092      00186     DATA 0x2d02, 0x92
+01E3   2C02 0010      00187     DATA 0x2c02, 0x10
+01E5   2C82 0002      00188     DATA 0x2c82, 0x2
+01E7   24C6 0002      00189     DATA 0x24c6, 0x2
+01E9   20C6 0000      00190     DATA 0x20c6, 0x0
+01EB   20E2 0002      00191     DATA 0x20e2, 0x2
+01ED   00C0 0002      00192     DATA 0xc0, 0x2
+01EF   00C6 0000      00193     DATA 0xc6, 0x0
+01F1   00C0 0000      00194     DATA 0xc0, 0x0
+01F3   0040 0000      00195     DATA 0x40, 0x0
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+01F5   0000 0000      00196     DATA 0x0, 0x0
+01F7   0000 0000      00197     DATA 0x0, 0x0
+01F9                  00198 img7end:
+01F9                  00199 img8start:
+01F9   0000 0000      00200     DATA 0x0, 0x0
+01FB   0000 0000      00201     DATA 0x0, 0x0
+01FD   0000 0000      00202     DATA 0x0, 0x0
+01FF   0000 0000      00203     DATA 0x0, 0x0
+0201   0000 0000      00204     DATA 0x0, 0x0
+0203   0000 0000      00205     DATA 0x0, 0x0
+0205   0000 0000      00206     DATA 0x0, 0x0
+0207   0000 0000      00207     DATA 0x0, 0x0
+0209   0080 0000      00208     DATA 0x80, 0x0
+020B   1208 0000      00209     DATA 0x1208, 0x0
+020D   1B01 0060      00210     DATA 0x1b01, 0x60
+020F   1801 0000      00211     DATA 0x1801, 0x0
+0211   1009 0000      00212     DATA 0x1009, 0x0
+0213   028C 0060      00213     DATA 0x28c, 0x60
+0215   038D 0062      00214     DATA 0x38d, 0x62
+0217   1800 0000      00215     DATA 0x1800, 0x0
+0219   0000 0000      00216     DATA 0x0, 0x0
+021B   0000 0000      00217     DATA 0x0, 0x0
+021D   0000 0000      00218     DATA 0x0, 0x0
+021F   0000 0000      00219     DATA 0x0, 0x0
+0221                  00220 img8end:
+0221                  00221 img9start:
+0221   2000 0000      00222     DATA 0x2000, 0x0
+0223   2402 0000      00223     DATA 0x2402, 0x0
+0225   3282 0002      00224     DATA 0x3282, 0x2
+0227   12FF 0022      00225     DATA 0x12ff, 0x22
+0229   128D 0002      00226     DATA 0x128d, 0x2
+022B   180D 0002      00227     DATA 0x180d, 0x2
+022D   0001 0002      00228     DATA 0x1, 0x2
+022F   0000 0000      00229     DATA 0x0, 0x0
+0231   0000 0000      00230     DATA 0x0, 0x0
+0233   0000 0000      00231     DATA 0x0, 0x0
+0235   0000 0000      00232     DATA 0x0, 0x0
+0237   0000 0000      00233     DATA 0x0, 0x0
+0239   0000 0000      00234     DATA 0x0, 0x0
+023B                  00235 img9end:
+023B                  00236 img10start:
+023B   0DCE 00D2      00237     DATA 0xdce, 0xd2
+023D   0DCE 00D2      00238     DATA 0xdce, 0xd2
+023F   36CF 00B2      00239     DATA 0x36cf, 0xb2
+0241   16CE 00D2      00240     DATA 0x16ce, 0xd2
+0243   15CE 00D2      00241     DATA 0x15ce, 0xd2
+0245   0DC4 00D2      00242     DATA 0xdc4, 0xd2
+0247   0DC4 00D2      00243     DATA 0xdc4, 0xd2
+0249   0DC4 00D2      00244     DATA 0xdc4, 0xd2
+024B   0DF4 00D2      00245     DATA 0xdf4, 0xd2
+024D   12F9 00C2      00246     DATA 0x12f9, 0xc2
+024F   11F5 00D2      00247     DATA 0x11f5, 0xd2
+0251   0DC5 00D2      00248     DATA 0xdc5, 0xd2
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0253   0DC4 00D2      00249     DATA 0xdc4, 0xd2
+0255   3DC5 00D2      00250     DATA 0x3dc5, 0xd2
+0257   3DC5 00D2      00251     DATA 0x3dc5, 0xd2
+0259   2DC5 00D2      00252     DATA 0x2dc5, 0xd2
+025B   2DC5 00D2      00253     DATA 0x2dc5, 0xd2
+025D   3DC5 00D2      00254     DATA 0x3dc5, 0xd2
+025F   3FC5 00D2      00255     DATA 0x3fc5, 0xd2
+0261   3DC5 00D2      00256     DATA 0x3dc5, 0xd2
+0263   2DC5 00D2      00257     DATA 0x2dc5, 0xd2
+0265   2DC5 00D2      00258     DATA 0x2dc5, 0xd2
+0267   3DC5 00D2      00259     DATA 0x3dc5, 0xd2
+0269   3DC5 00D2      00260     DATA 0x3dc5, 0xd2
+026B   0DC4 00D2      00261     DATA 0xdc4, 0xd2
+026D   0DC4 00D2      00262     DATA 0xdc4, 0xd2
+026F   3FC5 00F2      00263     DATA 0x3fc5, 0xf2
+0271   3FC5 00F2      00264     DATA 0x3fc5, 0xf2
+0273   0DC4 00D2      00265     DATA 0xdc4, 0xd2
+0275   0DC4 00D2      00266     DATA 0xdc4, 0xd2
+0277   3DC5 00D2      00267     DATA 0x3dc5, 0xd2
+0279   13C5 00C0      00268     DATA 0x13c5, 0xc0
+027B   3EC5 00C2      00269     DATA 0x3ec5, 0xc2
+027D   1BC5 00C0      00270     DATA 0x1bc5, 0xc0
+027F   13C4 0062      00271     DATA 0x13c4, 0x62
+0281   0DC4 00D2      00272     DATA 0xdc4, 0xd2
+0283   0DC4 00D2      00273     DATA 0xdc4, 0xd2
+0285   0DC4 00D2      00274     DATA 0xdc4, 0xd2
+0287   0DC4 00D2      00275     DATA 0xdc4, 0xd2
+0289   0DC4 00D2      00276     DATA 0xdc4, 0xd2
+028B                  00277 img10end:
+028B                  00278 img11start:
+028B   0904 0002      00279     DATA 0x904, 0x2
+028D   0924 0042      00280     DATA 0x924, 0x42
+028F   0120 0042      00281     DATA 0x120, 0x42
+0291   0120 0042      00282     DATA 0x120, 0x42
+0293   0120 0042      00283     DATA 0x120, 0x42
+0295   0000 0000      00284     DATA 0x0, 0x0
+0297   0000 0000      00285     DATA 0x0, 0x0
+0299   0924 0042      00286     DATA 0x924, 0x42
+029B   0924 0042      00287     DATA 0x924, 0x42
+029D   0104 0042      00288     DATA 0x104, 0x42
+029F   0904 0042      00289     DATA 0x904, 0x42
+02A1   0900 0002      00290     DATA 0x900, 0x2
+02A3   0000 0000      00291     DATA 0x0, 0x0
+02A5   0000 0000      00292     DATA 0x0, 0x0
+02A7   0904 0042      00293     DATA 0x904, 0x42
+02A9   0924 0042      00294     DATA 0x924, 0x42
+02AB   0020 0002      00295     DATA 0x20, 0x2
+02AD   0004 0002      00296     DATA 0x4, 0x2
+02AF   0004 0002      00297     DATA 0x4, 0x2
+02B1   0020 0002      00298     DATA 0x20, 0x2
+02B3   0924 0042      00299     DATA 0x924, 0x42
+02B5   0904 0042      00300     DATA 0x904, 0x42
+02B7   0000 0000      00301     DATA 0x0, 0x0
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+02B9   0000 0000      00302     DATA 0x0, 0x0
+02BB   0000 0000      00303     DATA 0x0, 0x0
+02BD   0000 0000      00304     DATA 0x0, 0x0
+02BF   0000 0000      00305     DATA 0x0, 0x0
+02C1   0000 0090      00306     DATA 0x0, 0x90
+02C3   0000 0090      00307     DATA 0x0, 0x90
+02C5   0000 0000      00308     DATA 0x0, 0x0
+02C7   0000 0000      00309     DATA 0x0, 0x0
+02C9   24C2 0090      00310     DATA 0x24c2, 0x90
+02CB   24C2 0090      00311     DATA 0x24c2, 0x90
+02CD   0000 0000      00312     DATA 0x0, 0x0
+02CF   0000 0000      00313     DATA 0x0, 0x0
+02D1   2482 0010      00314     DATA 0x2482, 0x10
+02D3   24C2 0090      00315     DATA 0x24c2, 0x90
+02D5   00C0 0090      00316     DATA 0xc0, 0x90
+02D7   00C0 0090      00317     DATA 0xc0, 0x90
+02D9   24C2 0090      00318     DATA 0x24c2, 0x90
+02DB   2482 0010      00319     DATA 0x2482, 0x10
+02DD   0000 0000      00320     DATA 0x0, 0x0
+02DF   0000 0000      00321     DATA 0x0, 0x0
+02E1   0000 0000      00322     DATA 0x0, 0x0
+02E3   0000 0000      00323     DATA 0x0, 0x0
+02E5   0000 0000      00324     DATA 0x0, 0x0
+02E7                  00325 img11end:
+02E7                  00326 img12start:
+02E7   3B24 0062      00327     DATA 0x3b24, 0x62
+02E9   2F24 0062      00328     DATA 0x2f24, 0x62
+02EB   3924 0072      00329     DATA 0x3924, 0x72
+02ED   2DA4 00D2      00330     DATA 0x2da4, 0xd2
+02EF   2D24 00D2      00331     DATA 0x2d24, 0xd2
+02F1   2D24 00D2      00332     DATA 0x2d24, 0xd2
+02F3   2D24 00D2      00333     DATA 0x2d24, 0xd2
+02F5   3D2A 00D2      00334     DATA 0x3d2a, 0xd2
+02F7   3F24 00D2      00335     DATA 0x3f24, 0xd2
+02F9   3D54 00D2      00336     DATA 0x3d54, 0xd2
+02FB   2D24 00D2      00337     DATA 0x2d24, 0xd2
+02FD   2D24 00D2      00338     DATA 0x2d24, 0xd2
+02FF   2D24 00D2      00339     DATA 0x2d24, 0xd2
+0301   2DA4 00D2      00340     DATA 0x2da4, 0xd2
+0303   2FC2 00D2      00341     DATA 0x2fc2, 0xd2
+0305   2F42 00F2      00342     DATA 0x2f42, 0xf2
+0307   2F24 00D2      00343     DATA 0x2f24, 0xd2
+0309   2D24 00D2      00344     DATA 0x2d24, 0xd2
+030B   2D24 00D2      00345     DATA 0x2d24, 0xd2
+030D   2D24 00D2      00346     DATA 0x2d24, 0xd2
+030F   2DA4 00D2      00347     DATA 0x2da4, 0xd2
+0311   3D24 00D2      00348     DATA 0x3d24, 0xd2
+0313   3F24 00D2      00349     DATA 0x3f24, 0xd2
+0315   3D2A 00D2      00350     DATA 0x3d2a, 0xd2
+0317   2D24 00D2      00351     DATA 0x2d24, 0xd2
+0319   2DA4 00D2      00352     DATA 0x2da4, 0xd2
+031B   2D24 00D2      00353     DATA 0x2d24, 0xd2
+031D   2D24 0072      00354     DATA 0x2d24, 0x72
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+031F   3924 0072      00355     DATA 0x3924, 0x72
+0321   2F24 0062      00356     DATA 0x2f24, 0x62
+0323                  00357 img12end:
+0323                  00358 images:
+0323   008D           00359     DW img0start
+0324   00B5           00360     DW img0end
+0325   00B5           00361     DW img1start
+0326   00DF           00362     DW img1end
+0327   00DF           00363     DW img2start
+0328   0107           00364     DW img2end
+0329   0107           00365     DW img3start
+032A   013F           00366     DW img3end
+032B   013F           00367     DW img4start
+032C   0167           00368     DW img4end
+032D   0167           00369     DW img5start
+032E   018F           00370     DW img5end
+032F   018F           00371     DW img6start
+0330   01C7           00372     DW img6end
+0331   01C7           00373     DW img7start
+0332   01F9           00374     DW img7end
+0333   01F9           00375     DW img8start
+0334   0221           00376     DW img8end
+0335   0221           00377     DW img9start
+0336   023B           00378     DW img9end
+0337   023B           00379     DW img10start
+0338   028B           00380     DW img10end
+0339   028B           00381     DW img11start
+033A   02E7           00382     DW img11end
+033B   02E7           00383     DW img12start
+033C   0323           00384     DW img12end
+  0000000C            00385 imgcnt equ 0xc
+                      00193 
+                      00194         END
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 13
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADCON0                            0000001F
+ADCON1                            0000009F
+ADCS0                             00000004
+ADCS1                             00000005
+ADCS2                             00000006
+ADDEN                             00000003
+ADFVR0                            00000000
+ADFVR1                            00000001
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADREF0                            00000000
+ADREF1                            00000001
+ADRES                             0000001E
+ANSA0                             00000000
+ANSA1                             00000001
+ANSA2                             00000002
+ANSA3                             00000003
+ANSA4                             00000004
+ANSA5                             00000005
+ANSB0                             00000000
+ANSB1                             00000001
+ANSB2                             00000002
+ANSB3                             00000003
+ANSB4                             00000004
+ANSB5                             00000005
+ANSELA                            00000185
+ANSELB                            00000186
+APFCON                            0000009C
+BF                                00000000
+BRGH                              00000002
+BUTTON                            PORTB, 0
+C                                 00000000
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCP2CON                           0000001D
+CCP2IE                            00000000
+CCP2IF                            00000000
+CCP2M0                            00000000
+CCP2M1                            00000001
+CCP2M2                            00000002
+CCP2M3                            00000003
+CCP2SEL                           00000000
+CCP2X                             00000005
+CCP2Y                             00000004
+CCPR1H                            00000016
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 14
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CCPR1L                            00000015
+CCPR2H                            0000001C
+CCPR2L                            0000001B
+CHS0                              00000002
+CHS1                              00000003
+CHS2                              00000004
+CHS3                              00000005
+CKE                               00000006
+CKP                               00000004
+CPSCH0                            00000000
+CPSCH1                            00000001
+CPSCH2                            00000002
+CPSCH3                            00000003
+CPSCON0                           00000108
+CPSCON1                           00000109
+CPSON                             00000007
+CPSOUT                            00000001
+CPSRNG0                           00000002
+CPSRNG1                           00000003
+CREN                              00000004
+CSRC                              00000007
+D                                 00000005
+DATA_ADDRESS                      00000005
+DC                                00000001
+DC1B0                             00000004
+DC1B1                             00000005
+DC2B0                             00000004
+DC2B1                             00000005
+D_A                               00000005
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+FVRCON                            0000009D
+FVREN                             00000006
+FVRST                             00000007
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+I2C_DATA                          00000005
+I2C_READ                          00000002
+I2C_START                         00000003
+I2C_STOP                          00000004
+ICSL                              00000003
+ICSS                              00000002
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IOC                               00000096
+IOC0                              00000000
+IOC1                              00000001
+IOC2                              00000002
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+IOC3                              00000003
+IOC4                              00000004
+IOC5                              00000005
+IOC6                              00000006
+IOC7                              00000007
+IOCB                              00000096
+IOCB0                             00000000
+IOCB1                             00000001
+IOCB2                             00000002
+IOCB3                             00000003
+IOCB4                             00000004
+IOCB5                             00000005
+IOCB6                             00000006
+IOCB7                             00000007
+IOCIE                             00000003
+IOCIF                             00000000
+IRCF0                             00000004
+IRCF1                             00000005
+IRP                               00000007
+NOT_A                             00000005
+NOT_ADDRESS                       00000005
+NOT_BO                            00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000001
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_RC8                           00000006
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+NOT_TX8                           00000006
+NOT_W                             00000002
+NOT_WRITE                         00000002
+OERR                              00000001
+OPTION_REG                        00000081
+OSCCON                            00000090
+OSCTUNE                           00000091
+P                                 00000004
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIE2                              0000008D
+PIR1                              0000000C
+PIR2                              0000000D
+PMADR                             0000010D
+PMADRH                            0000010F
+PMADRL                            0000010D
+PMCON1                            0000018C
+PMDATA                            0000010C
+PMDATH                            0000010E
+PMDATL                            0000010C
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+PMRD                              00000000
+PORTA                             00000005
+PORTB                             00000006
+PORTC                             00000007
+PORTE                             00000009
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+R                                 00000002
+RBIE                              00000003
+RBIF                              00000000
+RC8_9                             00000006
+RC9                               00000006
+RCD8                              00000000
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+READ_WRITE                        00000002
+RP0                               00000005
+RP1                               00000006
+RX9                               00000006
+RX9D                              00000000
+R_W                               00000002
+S                                 00000003
+SMP                               00000007
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+SSPADD                            00000093
+SSPBUF                            00000013
+SSPCON                            00000014
+SSPEN                             00000005
+SSPIE                             00000003
+SSPIF                             00000003
+SSPM0                             00000000
+SSPM1                             00000001
+SSPM2                             00000002
+SSPM3                             00000003
+SSPMSK                            00000093
+SSPOV                             00000006
+SSPSTAT                           00000094
+SSSEL                             00000001
+STATUS                            00000003
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T0XCS                             00000000
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 17
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1GCON                            0000008F
+T1GGO                             00000003
+T1GGO_DONE                        00000003
+T1GPOL                            00000006
+T1GSPM                            00000004
+T1GSS0                            00000000
+T1GSS1                            00000001
+T1GTM                             00000005
+T1GVAL                            00000002
+T1G_NOT_DONE                      00000003
+T1INSYNC                          00000002
+T1OSCEN                           00000003
+T1SYNC                            00000002
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1CS0                           00000006
+TMR1CS1                           00000007
+TMR1GE                            00000007
+TMR1GIE                           00000007
+TMR1GIF                           00000007
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISB                             00000086
+TRISC                             00000087
+TRISE                             00000089
+TRMT                              00000001
+TUN0                              00000000
+TUN1                              00000001
+TUN2                              00000002
+TUN3                              00000003
+TUN4                              00000004
+TUN5                              00000005
+TX8_9                             00000006
+TX9                               00000006
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 18
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TX9D                              00000000
+TXD8                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+UA                                00000001
+W                                 00000000
+WCOL                              00000007
+WPU0                              00000000
+WPU1                              00000001
+WPU2                              00000002
+WPU3                              00000003
+WPU4                              00000004
+WPU5                              00000005
+WPU6                              00000006
+WPU7                              00000007
+WPUB                              00000095
+WPUB0                             00000000
+WPUB1                             00000001
+WPUB2                             00000002
+WPUB3                             00000003
+WPUB4                             00000004
+WPUB5                             00000005
+WPUB6                             00000006
+WPUB7                             00000007
+Z                                 00000002
+_BORV_1_9                         00003FFF
+_BORV_2_5                         00003BFF
+_BOR_NSLEEP                       00003DFF
+_BOR_OFF                          00003CFF
+_BOR_ON                           00003FFF
+_CONFIG1                          00002007
+_CONFIG2                          00002008
+_CP_OFF                           00003FFF
+_CP_ON                            00003FBF
+_DEBUG_OFF                        00003FFF
+_DEBUG_ON                         00001FFF
+_EC_OSC                           00003FFB
+_EXTRC                            00003FFF
+_EXTRCIO                          00003FFE
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_HS_OSC                           00003FFA
+_INTOSC                           00003FFD
+_INTOSCIO                         00003FFC
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_MCLR_DIS                         00003FDF
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 19
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_MCLR_EN                          00003FFF
+_PLL_DIS                          00002FFF
+_PLL_EN                           00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_PWRT_DIS                         00003FFF
+_PWRT_EN                          00003FEF
+_VCAP_DIS                         00003FFF
+_VCAP_RA0                         00003FCF
+_VCAP_RA5                         00003FDF
+_VCAP_RA6                         00003FEF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FF9
+__16F722                          00000001
+__DEBUG                           1
+aftereoi                          0000005B
+btndown                           00000075
+images                            00000323
+img0end                           000000B5
+img0start                         0000008D
+img10end                          0000028B
+img10start                        0000023B
+img11end                          000002E7
+img11start                        0000028B
+img12end                          00000323
+img12start                        000002E7
+img1end                           000000DF
+img1start                         000000B5
+img2end                           00000107
+img2start                         000000DF
+img3end                           0000013F
+img3start                         00000107
+img4end                           00000167
+img4start                         0000013F
+img5end                           0000018F
+img5start                         00000167
+img6end                           000001C7
+img6start                         0000018F
+img7end                           000001F9
+img7start                         000001C7
+img8end                           00000221
+img8start                         000001F9
+img9end                           0000023B
+img9start                         00000221
+imgcnt                            0000000C
+imgendhigh                        00000073
+imgendlow                         00000072
+imgid                             00000074
+imgsthigh                         00000071
+imgstlow                          00000070
+loop                              00000022
+nobutton                          0000008B
+MPASM  5.35                          MAIN.ASM   4-9-2010  16:56:05         PAGE 20
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+noinchigh1                        0000003F
+noinchigh2                        0000004F
+noinchigh3                        0000007F
+start                             00000005
+vwait1                            00000076
+vwait2                            00000077
+wait1                             00000024
+wait2                             00000025
+waitcst                           000000C0
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+00C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0100 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0140 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0180 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+01C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0200 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0240 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0280 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+02C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0300 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXX---
+2000 : -------XX------- ---------------- ---------------- ----------------
+
+All other memory blocks unused.
+
+Program Memory Words Used:   829
+Program Memory Words Free:  1219
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :    32 reported,     0 suppressed
+
+
